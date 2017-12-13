@@ -22,7 +22,7 @@ def train_sgd( x, y, iter_num, learning_rate, eplise ):
 
     costJ = []
     alpha = learning_rate
-
+    lamda= 0.1
     k = 0
     i = 0
     for k in range( iter_num ):
@@ -30,10 +30,10 @@ def train_sgd( x, y, iter_num, learning_rate, eplise ):
             x_sample = x[i]
             z = np.dot( x_sample, theta)
             h = 1.0/(1+ np.exp(-z))
-            gradient = x_sample.reshape(ncol,1) * (y[i]-h)
+            gradient = x_sample.reshape(ncol,1) * (y[i]-h) - alpha*lamda*theta / nrow
             theta += alpha*gradient
             i += 1
-        J =  (np.sum((y-sigmoid(np.dot(x,theta)).reshape(nrow,1))**2))/(2*nrow)
+        J =  (np.sum((y-sigmoid(np.dot(x,theta)).reshape(nrow,1))**2))/(2*nrow) + lamda*np.sum( theta**2 )/(2*nrow)
         costJ.append( J )
         if np.sum( np.fabs(gradient) ) <= eplise:
             return theta, costJ
@@ -54,14 +54,14 @@ def train_bgd( x, y, iter_num, learning_rate, eplise):
     eplises = []
     e = 0.01
     alpha = learning_rate
-
+    lamda = 0.1
     for k in range( iter_num ):
         z = np.dot( x, theta )
         h = sigmoid( z )
-        J = ( np.sum(y - h)**2 )/( 2*nrow )
+        J = ( np.sum(y - h)**2 )/( 2*nrow )  + lamda*np.sum( theta**2 )/(2*nrow)
         costJ.append( J )
 
-        gradient = -np.dot( np.transpose(x), y-h ) / nrow
+        gradient = -np.dot( np.transpose(x), y-h ) / nrow - alpha*lamda*theta / nrow
         ep = sum( np.fabs(gradient) )
         eplises.append(ep)
         if ep < eplise:
