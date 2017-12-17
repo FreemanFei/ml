@@ -1,7 +1,6 @@
 # -*- coding:utf-8 -*-
 #/usr/bin/python 
 import numpy as np
-import cv2
 import random
 import time
 import pandas as pd
@@ -16,7 +15,7 @@ def train_percp( x, y, iter_num, learning_rate ):
 	#每次迭代随机抽取样本中一个样本对权重进行更新
 
 	nrow, ncol = x.shape
-	w = np.ones( (ncol,1) )
+	w = np.ones( (1,ncol) )/2
 	b = 0
 
 	correct = 0
@@ -26,8 +25,8 @@ def train_percp( x, y, iter_num, learning_rate ):
 		x_train = x[index]
 		y_train = y[index]
 
-		fx = np.dot( x_train, w )[0] * y_train + b
-		if fx >= 0:
+		fx = np.dot( w, x_train )[0] + b
+		if fx*y_train > 0:
 			correct += 1
 			if correct > iter_num:
 				break
@@ -44,7 +43,7 @@ def predction( x, y, model):
 	w, b = model
 	lbls = [ ] 
 	for i in range(len(x)):
-		if np.dot( x[i], w )[0]+b > 0:
+		if np.dot( w, x[i] )[0]+b > 0:
 			lbls.append( 1 ) 
 		else:
 			lbls.append( -1 )
@@ -54,7 +53,7 @@ def predction( x, y, model):
 
 if __name__ == '__main__':
 
-    print 'Start read data'
+    print 'Start'
 
     time_1 = time.time()
 
@@ -75,18 +74,34 @@ if __name__ == '__main__':
     train_features, test_features, train_labels, test_labels = train_test_split(
         imgs, labels_new, test_size=0.33, random_state=23323)
 
+    time_2 = time.time()
+    print 'data processing cost: ',time_2 - time_1
 
-    iter_num = 5000
-    learning_rate = 0.00001
+
+    time_1 = time.time()
+
+    iter_num = 100000
+    learning_rate = 0.01
 
     model = train_percp( train_features, train_labels, iter_num, learning_rate )
+    
+    time_2 = time.time()
+    print 'Traning cost: ',time_2 - time_1
+
+
+    time_1 = time.time()
+
     lbls = predction( test_features, test_labels, model)
 
 
     score = accuracy_score( test_labels, np.array(lbls) )
 
-    print score
+    print 'Test AUC: ', score
 
+    time_2	= time.time()
+
+
+    print 'predction cost: ',time_2 - time_1
 
 
 
