@@ -57,7 +57,7 @@ if __name__ == '__main__':
 
     time_1 = time.time()
 
-    raw_data = pd.read_csv('/Users/fei_Daniel/Desktop/machineLearning-master/lihang_book_algorithm/data/train_binary.csv', header=0)
+    raw_data = pd.read_csv('../data/train_binary.csv', header=0)
     data = raw_data.values
 
     imgs = data[0::, 1::]
