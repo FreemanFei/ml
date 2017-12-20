@@ -37,7 +37,6 @@ def train_softmax( x, y, learing_rate, iter_num, lamda, lbls ):
 
             first = 0
 
-
         for i in range(k):
             w[ i ] = w[ i ] - learning_rate * gradient_list[ i ]
 

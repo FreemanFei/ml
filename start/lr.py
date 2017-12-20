@@ -1,159 +1,111 @@
-# -*- coding:utf-8 -*-
-#/usr/bin/python
+import time
+import numpy as np
+import random
 
 import pandas as pd
-import numpy as np
-import scipy as sp
-#import matplotlib.pyplot as plt
-import math
-from sklearn.metrics import roc_curve, auc
+from sklearn.cross_validation import train_test_split
+from sklearn.metrics import accuracy_score
 
 
-def sigmoid( z ):
-    return  1.0/(1+ np.exp(-z))
+def cost(x,y,w):
+	all_cost = 0
+	for k in range(len(y)):
+		z = np.dot(w,x[k])
+		h = 1.0 * ( 1.0/(1+ np.exp(-z)) )
+		all_cost += ( y[k] - h )**2
+	all_cost = all_cost/len(y)
 
-def train_sgd( x, y, iter_num, learning_rate, eplise ):
-    # stochastic gradient descent
-    nrow, ncol = x.shape
-    # 在前面增加一个常数项, x0
-    x = np.hstack( (np.array([1.0 for i in xrange(nrow)]).reshape(nrow,1),x ) )
-    nrow, ncol = x.shape
-    theta = np.zeros((ncol,1))
+	return float( all_cost )
 
-    costJ = []
-    alpha = learning_rate
-    lamda= 0.1
-    k = 0
-    i = 0
-    for k in range( iter_num ):
-        for i in range(nrow):
-            x_sample = x[i]
-            z = np.dot( x_sample, theta)
-            h = 1.0/(1+ np.exp(-z))
-            gradient = x_sample.reshape(ncol,1) * (y[i]-h) - alpha*lamda*theta / nrow
-            theta += alpha*gradient
-            i += 1
-        J =  (np.sum((y-sigmoid(np.dot(x,theta)).reshape(nrow,1))**2))/(2*nrow) + lamda*np.sum( theta**2 )/(2*nrow)
-        costJ.append( J )
-        if np.sum( np.fabs(gradient) ) <= eplise:
-            return theta, costJ
-        k += 1
-    return theta, costJ
+def train_lr(x, y, iter_num, learning_rate):
+
+	nrow, ncol = x.shape
+	x = np.hstack( (np.array([1.0 for i in xrange(nrow)]).reshape(nrow,1),x) )
+	nrow, ncol = x.shape
+	w = np.zeros((1,ncol))
+	costJ = []
 
 
-def train_bgd( x, y, iter_num, learning_rate, eplise):
-    # Batch Gradient Descent
-    # 每一步都用到全量的数据进行梯度下降的计算
-    # learning_rate会在每次迭代中找寻最优化的
-    nrow, ncol = x.shape
-    x = np.hstack( (np.array([1.0 for i in xrange(nrow)]).reshape(nrow,1),x) )
-    nrow, ncol = x.shape
+	for i in xrange(iter_num):
+		index = random.randint( 0,len(y)-1 )
+		x_train = x[index]
+		y_train = y[index]
 
-    theta = np.ones((ncol, 1))
-    costJ = []
-    eplises = []
-    e = 0.01
-    alpha = learning_rate
-    lamda = 0.1
-    for k in range( iter_num ):
-        z = np.dot( x, theta )
-        h = sigmoid( z )
-        J = ( np.sum(y - h)**2 )/( 2*nrow )  + lamda*np.sum( theta**2 )/(2*nrow)
-        costJ.append( J )
+		z = np.dot( w,x_train )
+		h = 1.0 * ( 1.0/(1+ np.exp(-z)) )
+		w = w + learning_rate*( y_train - h )*x_train / (2*nrow)
 
-        gradient = -np.dot( np.transpose(x), y-h ) / nrow - alpha*lamda*theta / nrow
-        ep = sum( np.fabs(gradient) )
-        eplises.append(ep)
-        if ep < eplise:
-            return theta, costJ, eplises
+		J = cost(x,y,w)
+		costJ.append(J)
 
-        #step = 0.001
-        #a, b = get_ab_simple( x, y, theta, alpha, step, gradient, nrow )
-        theta = theta + alpha * gradient
-    return theta, costJ， eplises
+	return w, costJ 
+
+
+def predction( x, model):
+
+	x_pred = []
+	nrow, ncol = x.shape
+	x_test = np.hstack( (np.array([1.0 for i in xrange(nrow)]).reshape(nrow,1),x) )
+
+	for line in x_test:
+		z = np.dot( model,line ) 
+		h = 1.0/(1+ np.exp(-z))
+
+		if h >= 0.5:
+			x_pred.append( 1 )
+		else:
+			x_pred.append( 0 )
+
+
+	return x_pred
 
 
 
-def train_mgd( x, y, iter_num, learning_rate, eplise):
-    # Mini-batch Gradient Descent
-    # 每一步都用到全量的数据进行梯度下降的计算
-    # learning_rate会在每次迭代中找寻最优化的
-    nrow, ncol = x.shape
-    x = np.hstack( (np.array([1.0 for i in xrange(nrow)]).reshape(nrow,1),x) )
-    nrow, ncol = x.shape
+if __name__ == '__main__':
 
-    theta = np.ones((ncol, 1))
-    costJ = []
-    eplises = []
-    e = 0.01
-    alpha = learning_rate
+    print 'Start'
 
-    step = nrow/10
+    time_1 = time.time()
 
-    for k in range( iter_num ):
-        for i in range(step-1):
-            z = np.dot( x[10*i:10*(i+1)], theta )
-            h = sigmoid( z )
-            J = ( np.sum(y[10*i:10*(i+1)] - h)**2 )/( 2*nrow )
-            costJ.append( J )
+    raw_data = pd.read_csv('../data/train_binary.csv', header=0)
+    data = raw_data.values
 
-            gradient = -np.dot( np.transpose(x[10*i:10*(i+1)] ), y[10*i:10*(i+1)] -h ) / nrow
-            ep = sum( np.fabs(gradient) )
-            eplises.append(ep)
-            if ep < eplise:
-                return theta, costJ, eplises
+    imgs = data[0::, 1::]
+    labels = data[::, 0]
 
-            #step = 0.001
-            #a, b = get_ab_simple( x, y, theta, alpha, step, gradient, nrow )
-            theta = theta + alpha * gradient
-    return theta, costJ， eplises
+
+    train_features, test_features, train_labels, test_labels = train_test_split( imgs, labels, test_size=0.33, random_state=23323)
+
+    time_2 = time.time()
+    print 'data processing cost: ',time_2 - time_1
+
+
+    time_1 = time.time()
+
+    iter_num = 100
+    learning_rate = 0.1
+
+    model,costJ = train_lr( train_features, train_labels, iter_num, learning_rate )
+
+
+    time_2 = time.time()
+    print 'Traning cost: ',time_2 - time_1
+
+
+    time_1 = time.time()
+
+    test_pred = predction( test_features, model)
+
+    score = accuracy_score( test_labels, np.array(test_pred) )
+
+    print 'Test AUC: ', score
+
+    time_2	= time.time()
+
+
+    print 'predction cost: ',time_2 - time_1
 
 
 
 
-def get_cost( x, y, theta, gradient, nrow, alpha):
-    theta = theta - alpha*gradient
-    z = np.dot( x, theta )
-    h = sigmoid( z )
-    return ( np.sum( (y-h)**2 ) )/(2*nrow)
 
-
-def get_ab_simple( x, y, theta, alpha, step, gradient, nrow ):
-
-    loop = 1
-
-    J1 = get_cost( x, y, theta, gradient, nrow, alpha)
-    alpha = alpha + step
-
-    J2 = get_cost( x, y, theta, gradient, nrow, alpha)
-
-    while ( loop > 0):
-        if J1 > J2:
-            step = 2 * step
-        elif J1 <= J2:
-            step = -2 * step
-            alpha = alpha - step
-            J2 = J1
-
-        alpha_new = alpha + step
-        J3 = get_cost( x, y, theta, gradient, nrow, alpha_new)
-        if J3 > J2:
-            a = min( alpha, alpha_new )
-            b = max( alpha, alpha_new )
-            return a, b
-        else:
-            alpha = alpha_new
-            J1 = J2
-            J2 = J3
-        loop += 1
-
-
-if __name__== '__main__':
-
-    data_logistic = pd.read_csv('/data/home/gaopengfei/learn_scrip/machineLearning/LR/data_logistic.csv')
-    data = np.array(data_logistic)
-    nrow,ncol = data.shape
-    x = data[:,0:(ncol-1)]
-    y = data[:,ncol-1].reshape(nrow,1)
-#    theta, costJ = train_sgd( x, y, 20, 0.005, 0.4)
-    train_bgd( x, y, 100, 0.001,'')
