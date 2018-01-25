@@ -1,3 +1,5 @@
+#-*-coding:utf-8-*-
+#!/usr/bin/python
 import time
 import numpy as np
 import random
@@ -35,8 +37,8 @@ def train_lr(x, y, iter_num, learning_rate):
 		h = 1.0 * ( 1.0/(1+ np.exp(-z)) )
 		w = w + learning_rate*( y_train - h )*x_train / (2*nrow)
 
-		J = cost(x,y,w)
-		costJ.append(J)
+		#J = cost(x,y,w)
+		#costJ.append(J)
 
 	return w, costJ 
 
