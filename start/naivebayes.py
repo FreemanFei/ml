@@ -1,3 +1,5 @@
+#-*-coding:utf-8-*-
+#!/usr/bin/python
 import os
 import re
 from sklearn.feature_extraction.text import CountVectorizer
