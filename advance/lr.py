@@ -1,44 +1,20 @@
 # -*- coding:utf-8 -*-
 #/usr/bin/python
 
-import pandas as pd
 import numpy as np
 import scipy as sp
 #import matplotlib.pyplot as plt
 import math
 from sklearn.metrics import roc_curve, auc
+import time
+
+import pandas as pd
+from sklearn.cross_validation import train_test_split
+from sklearn.metrics import accuracy_score
 
 
 def sigmoid( z ):
     return  1.0/(1+ np.exp(-z))
-
-def train_sgd( x, y, iter_num, learning_rate, eplise ):
-    # stochastic gradient descent
-    nrow, ncol = x.shape
-    # 在前面增加一个常数项, x0
-    x = np.hstack( (np.array([1.0 for i in xrange(nrow)]).reshape(nrow,1),x ) )
-    nrow, ncol = x.shape
-    theta = np.zeros((ncol,1))
-
-    costJ = []
-    alpha = learning_rate
-    lamda= 0.1
-    k = 0
-    i = 0
-    for k in range( iter_num ):
-        for i in range(nrow):
-            x_sample = x[i]
-            z = np.dot( x_sample, theta)
-            h = 1.0/(1+ np.exp(-z))
-            gradient = x_sample.reshape(ncol,1) * (y[i]-h) - alpha*lamda*theta / nrow
-            theta += alpha*gradient
-            i += 1
-        J =  (np.sum((y-sigmoid(np.dot(x,theta)).reshape(nrow,1))**2))/(2*nrow) + lamda*np.sum( theta**2 )/(2*nrow)
-        costJ.append( J )
-        if np.sum( np.fabs(gradient) ) <= eplise:
-            return theta, costJ
-        k += 1
-    return theta, costJ
 
 
 def train_bgd( x, y, iter_num, learning_rate, eplise):
@@ -147,13 +123,112 @@ def get_ab_simple( x, y, theta, alpha, step, gradient, nrow ):
             J2 = J3
         loop += 1
 
+def predction( x, model):
+
+    x_pred = []
+    nrow, ncol = x.shape
+    x_test = np.hstack( (np.array([1.0 for i in xrange(nrow)]).reshape(nrow,1),x) )
+
+    for line in x_test:
+        z = np.dot( model,line ) 
+        h = 1.0/(1+ np.exp(-z))
+
+        if h >= 0.5:
+            x_pred.append( 1 )
+        else:
+            x_pred.append( 0 )
+
+
+    return x_pred
+
+def train_sgd( x, y, iter_num, learning_rate, eplise ):
+    # stochastic gradient descent
+    nrow, ncol = x.shape
+    # 在前面增加一个常数项, x0
+    x = np.hstack( (np.array([1.0 for i in xrange(nrow)]).reshape(nrow,1),x ) )
+    nrow, ncol = x.shape
+    w = np.zeros((1,ncol))
+
+    costJ = []
+    alpha = learning_rate
+    lamda= 0.1
+    k = 0
+    i = 0
+    for k in range( iter_num ):
+        for i in range(nrow):
+            x_sample = x[i]
+            z = np.dot( w,x_sample)
+            h = 1.0/(1+ np.exp(-z))
+            gradient = ( x_sample.reshape(ncol,1) * (y[i]-h) - alpha*lamda*w.T ) / nrow
+
+            w += alpha*gradient.T
+            i += 1
+
+        #J =  (np.sum((y-sigmoid(np.dot(x,w)).reshape(nrow,1))**2))/(2*nrow) + lamda*np.sum( theta**2 )/(2*nrow)
+        #costJ.append( J )
+        if np.sum( np.fabs(gradient) ) <= eplise:
+            return w, costJ
+        k += 1
+
+    return w, costJ
+
 
 if __name__== '__main__':
 
-    data_logistic = pd.read_csv('/Users/fei_Daniel/Desktop/my_ml/ml/data/data_logistic.csv')
-    data = np.array(data_logistic)
-    nrow,ncol = data.shape
-    x = data[:,0:(ncol-1)]
-    y = data[:,ncol-1].reshape(nrow,1)
-#    theta, costJ = train_sgd( x, y, 20, 0.005, 0.4)
-    train_bgd( x, y, 100, 0.001,'')
+#     data_logistic = pd.read_csv('/Users/fei_Daniel/Desktop/my_ml/ml/data/data_logistic.csv')
+#     data = np.array(data_logistic)
+#     nrow,ncol = data.shape
+#     x = data[:,0:(ncol-1)]
+#     y = data[:,ncol-1].reshape(nrow,1)
+
+# #    theta, costJ = train_sgd( x, y, 20, 0.005, 0.4)
+#     train_bgd( x, y, 100, 0.001,'')
+
+
+    print 'Start'
+
+    time_1 = time.time()
+
+    raw_data = pd.read_csv('../data/train_binary.csv', header=0)
+    data = raw_data.values
+
+    imgs = data[0::, 1::]
+    labels = data[::, 0]
+
+
+    train_features, test_features, train_labels, test_labels = train_test_split( imgs, labels, test_size=0.33, random_state=23323)
+
+    time_2 = time.time()
+    print 'data processing cost: ',time_2 - time_1
+
+
+    time_1 = time.time()
+
+    iter_num = 200
+    learning_rate = 0.1
+    eplise = 0.4
+
+    model,costJ = train_sgd( train_features, train_labels, iter_num, learning_rate, eplise )
+
+    print costJ
+
+    time_2 = time.time()
+    print 'Traning cost: ',time_2 - time_1
+
+
+    time_1 = time.time()
+
+    test_pred = predction( test_features, model)
+
+    score = accuracy_score( test_labels, np.array(test_pred) )
+
+    print 'Test AUC: ', score
+
+    time_2  = time.time()
+
+
+    print 'predction cost: ',time_2 - time_1
+
+
+
+
