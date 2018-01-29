@@ -17,39 +17,6 @@ def sigmoid( z ):
     return  1.0/(1+ np.exp(-z))
 
 
-def train_bgd( x, y, iter_num, learning_rate, eplise):
-    # Batch Gradient Descent
-    # 每一步都用到全量的数据进行梯度下降的计算
-    # learning_rate会在每次迭代中找寻最优化的
-    nrow, ncol = x.shape
-    x = np.hstack( (np.array([1.0 for i in xrange(nrow)]).reshape(nrow,1),x) )
-    nrow, ncol = x.shape
-
-    theta = np.ones((ncol, 1))
-    costJ = []
-    eplises = []
-    e = 0.01
-    alpha = learning_rate
-    lamda = 0.1
-    for k in range( iter_num ):
-        z = np.dot( x, theta )
-        h = sigmoid( z )
-        J = ( np.sum(y - h)**2 )/( 2*nrow )  + lamda*np.sum( theta**2 )/(2*nrow)
-        costJ.append( J )
-
-        gradient = -np.dot( np.transpose(x), y-h ) / nrow - alpha*lamda*theta / nrow
-        ep = sum( np.fabs(gradient) )
-        eplises.append(ep)
-        if ep < eplise:
-            return theta, costJ, eplises
-
-        #step = 0.001
-        #a, b = get_ab_simple( x, y, theta, alpha, step, gradient, nrow )
-        theta = theta + alpha * gradient
-    return theta, costJ, eplises
-
-
-
 def train_mgd( x, y, iter_num, learning_rate, eplise):
     # Mini-batch Gradient Descent
     # 每一步都用到全量的数据进行梯度下降的计算
@@ -130,6 +97,7 @@ def predction( x, model):
     x_test = np.hstack( (np.array([1.0 for i in xrange(nrow)]).reshape(nrow,1),x) )
 
     for line in x_test:
+
         z = np.dot( model,line ) 
         h = 1.0/(1+ np.exp(-z))
 
@@ -164,7 +132,7 @@ def train_sgd( x, y, iter_num, learning_rate, eplise ):
             w += alpha*gradient.T
             i += 1
 
-        #J =  (np.sum((y-sigmoid(np.dot(x,w)).reshape(nrow,1))**2))/(2*nrow) + lamda*np.sum( theta**2 )/(2*nrow)
+        #J =  (np.sum((y-sigmoid(np.dot(x,w)).reshape(nrow,1))**2))/(2*nrow) + lamda*np.sum( w**2 )/(2*nrow)
         #costJ.append( J )
         if np.sum( np.fabs(gradient) ) <= eplise:
             return w, costJ
@@ -173,17 +141,42 @@ def train_sgd( x, y, iter_num, learning_rate, eplise ):
     return w, costJ
 
 
+def train_bgd( x, y, iter_num, learning_rate, eplise):
+    # Batch Gradient Descent
+    # 每一步都用到全量的数据进行梯度下降的计算
+    # learning_rate会在每次迭代中找寻最优化的
+    nrow, ncol = x.shape
+    x = np.hstack( (np.array([1.0 for i in xrange(nrow)]).reshape(nrow,1),x) )
+    nrow, ncol = x.shape
+    w = np.zeros((ncol,1))
+
+    costJ = []
+    eplises = []
+    e = 0.01
+    alpha = learning_rate
+    lamda = 0.1
+    for k in range( iter_num ):
+
+        z = np.dot( x, w )
+        h = sigmoid( z )
+
+        #J = ( np.sum(y - h)**2 )/( 2*nrow )  + lamda*np.sum( w**2 )/(2*nrow)
+        #costJ.append( J )
+
+        gradient = -np.dot( x.T, (y.reshape(nrow,1)-h) ) / nrow - alpha*lamda*w / nrow
+        ep = sum( np.fabs(gradient) )
+        eplises.append(ep)
+        if ep < eplise:
+            return w.T, costJ, eplises
+
+        #step = 0.001
+        #a, b = get_ab_simple( x, y, w, alpha, step, gradient, nrow )
+        w = w + alpha * gradient
+
+    return w.T, costJ, eplises
+
+
 if __name__== '__main__':
-
-#     data_logistic = pd.read_csv('/Users/fei_Daniel/Desktop/my_ml/ml/data/data_logistic.csv')
-#     data = np.array(data_logistic)
-#     nrow,ncol = data.shape
-#     x = data[:,0:(ncol-1)]
-#     y = data[:,ncol-1].reshape(nrow,1)
-
-# #    theta, costJ = train_sgd( x, y, 20, 0.005, 0.4)
-#     train_bgd( x, y, 100, 0.001,'')
-
 
     print 'Start'
 
@@ -204,13 +197,13 @@ if __name__== '__main__':
 
     time_1 = time.time()
 
-    iter_num = 200
+    iter_num = 2000
     learning_rate = 0.1
     eplise = 0.4
 
-    model,costJ = train_sgd( train_features, train_labels, iter_num, learning_rate, eplise )
+    #model,costJ = train_sgd( train_features, train_labels, iter_num, learning_rate, eplise )
+    model,costJ,eplises = train_bgd( train_features, train_labels, iter_num, learning_rate, eplise )
 
-    print costJ
 
     time_2 = time.time()
     print 'Traning cost: ',time_2 - time_1
