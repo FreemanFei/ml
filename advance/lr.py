@@ -70,7 +70,7 @@ def train_bgd( x, y, iter_num, learning_rate, eplise):
         #step = 0.001
         #a, b = get_ab_simple( x, y, theta, alpha, step, gradient, nrow )
         theta = theta + alpha * gradient
-    return theta, costJ， eplises
+    return theta, costJ, eplises
 
 
 
@@ -106,7 +106,7 @@ def train_mgd( x, y, iter_num, learning_rate, eplise):
             #step = 0.001
             #a, b = get_ab_simple( x, y, theta, alpha, step, gradient, nrow )
             theta = theta + alpha * gradient
-    return theta, costJ， eplises
+    return theta, costJ, eplises
 
 
 
@@ -150,7 +150,7 @@ def get_ab_simple( x, y, theta, alpha, step, gradient, nrow ):
 
 if __name__== '__main__':
 
-    data_logistic = pd.read_csv('/data/home/gaopengfei/learn_scrip/machineLearning/LR/data_logistic.csv')
+    data_logistic = pd.read_csv('/Users/fei_Daniel/Desktop/my_ml/ml/data/data_logistic.csv')
     data = np.array(data_logistic)
     nrow,ncol = data.shape
     x = data[:,0:(ncol-1)]
