@@ -141,41 +141,6 @@ def train_sgd( x, y, iter_num, learning_rate, eplise ):
     return w, costJ
 
 
-def train_bgd( x, y, iter_num, learning_rate, eplise):
-    # Batch Gradient Descent
-    # 每一步都用到全量的数据进行梯度下降的计算
-    # learning_rate会在每次迭代中找寻最优化的
-    nrow, ncol = x.shape
-    x = np.hstack( (np.array([1.0 for i in xrange(nrow)]).reshape(nrow,1),x) )
-    nrow, ncol = x.shape
-    w = np.zeros((ncol,1))
-
-    costJ = []
-    eplises = []
-    e = 0.01
-    alpha = learning_rate
-    lamda = 0.1
-    for k in range( iter_num ):
-
-        z = np.dot( x, w )
-        h = sigmoid( z )
-
-        #J = ( np.sum(y - h)**2 )/( 2*nrow )  + lamda*np.sum( w**2 )/(2*nrow)
-        #costJ.append( J )
-
-        gradient = -np.dot( x.T, (y.reshape(nrow,1)-h) ) / nrow - alpha*lamda*w / nrow
-        ep = sum( np.fabs(gradient) )
-        eplises.append(ep)
-        if ep < eplise:
-            return w.T, costJ, eplises
-
-        #step = 0.001
-        #a, b = get_ab_simple( x, y, w, alpha, step, gradient, nrow )
-        w = w + alpha * gradient
-
-    return w.T, costJ, eplises
-
-
 if __name__== '__main__':
 
     print 'Start'
@@ -197,12 +162,11 @@ if __name__== '__main__':
 
     time_1 = time.time()
 
-    iter_num = 2000
-    learning_rate = 0.1
+    iter_num = 200
+    learning_rate = 0.01
     eplise = 0.4
 
-    #model,costJ = train_sgd( train_features, train_labels, iter_num, learning_rate, eplise )
-    model,costJ,eplises = train_bgd( train_features, train_labels, iter_num, learning_rate, eplise )
+    model,costJ = train_sgd( train_features, train_labels, iter_num, learning_rate, eplise )
 
 
     time_2 = time.time()
@@ -221,7 +185,4 @@ if __name__== '__main__':
 
 
     print 'predction cost: ',time_2 - time_1
-
-
-
 
